@@ -1,17 +1,33 @@
 # ipset_mtproxy
 
-**ipset.up.zip** содержит правила для ipset (свыше 1М записей), состоит из двух листов:
+**ipset.up.zip** содержит правила для ipset (свыше 1М записей), состоит из пяти листов:
 
-<code>badhosts</code> (накопительный) - proxy_all.txt, IP полученные по скрипту - https://t.me/c/1301206189/5916, IP публичных прокси, полученные по маске <code>IP:PORT</code> из открытых источников.<br>
+<code>badhosts</code> (накопительный) - proxy_all.txt + IP полученные по <a href="https://t.me/unkn0wnerror/1237">скрипту</a> + IP публичных прокси (**ip:port** из открытых источников);
 
-<code>digitalocean</code> - подсети DigitalOcean (возможное использование мощностей РКНом). <br/>
+<code>digitalocean</code> - подсети DigitalOcean (возможное использование мощностей РКНом);
 
-<code>countryblock</code> 
-- подсети государственных учереждений причастных к блокировкам (основная часть - https://github.com/AntiZapret/antizapret/blob/master/blacklist4.txt), <br/>
-- подсети из из стран: Иран, Китай, Пакистан (потенциальные генераторы нагрузки), 
+<code>countryblock</code> - подсети стран: Иран, Китай, Пакистан (потенциальные генераторы нагрузки);
+
+<code>mikrotik</code> - IP-адреса микротиков смотрящих в Интернет (СПБ и МСК);
+
+<code>rugov</code> - подсети госучреждений причастных к блокировкам (<a href="https://github.com/AntiZapret/antizapret/blob/master/blacklist4.txt">основная часть</a>).
 <hr>
 
-<code>proxy_all.txt</code> - Спарсенные прокси (https://lite.ip2location.com/database/px1-ip-country) на август 2019 года:
+**БЫСТРАЯ УСТАНОВКА:**
+
+```bash
+curl -L -o install https://git.io/fjhCo && chmod +x install
+
+./install -badhosts -digitalocean -rugov
+```
+Ошибки, которые могут встретиться:
+
+<code>exit status 1</code> - не удалось найти строку через grep.
+<hr>
+
+**ФАЙЛЫ:**
+
+<code>proxy_all.txt</code> - спарсенные <a href="https://lite.ip2location.com/database/px1-ip-country">прокси</a> на сентябрь 2019 года.
 <hr>
 
 **IPSET:**
@@ -24,15 +40,17 @@ ipset save > /etc/backup.ipset.up.rules
 Сброс правил:
 ```bash
 ipset destroy
-
-# не всегда работает, самый гарантированный способ сбрасывать через перезагрузку
 ```
 
 Установить правила:
 ```bash
-ipset restore < /etc/ipset.up.rules
+ipset restore < /opt/ipset_mtproxy/badhosts
+ipset restore < /opt/ipset_mtproxy/digitalocean
+ipset restore < /opt/ipset_mtproxy/countryblock
+ipset restore < /opt/ipset_mtproxy/mikrotik
+ipset restore < /opt/ipset_mtproxy/rugov
 
-# путь может быть другой
+ipset save > /etc/ipset.up.rules
 ```
 
 **IPTABLES:**
@@ -40,6 +58,8 @@ ipset restore < /etc/ipset.up.rules
 iptables -A INPUT -m set --match-set badhosts src -j DROP
 iptables -A INPUT -m set --match-set digitalocean src -j DROP
 iptables -A INPUT -m set --match-set countryblock src -j DROP
+iptables -A INPUT -m set --match-set mikrotik src -j DROP
+iptables -A INPUT -m set --match-set rugov src -j DROP
 
 iptables-save > /etc/rules.v4
 ```
